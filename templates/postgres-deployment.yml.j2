@@ -1,0 +1,48 @@
+# roles/postgresql/templates/postgres-deployment.yml.j2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: {{ postgres_namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ postgres_image }}"
+          ports:
+            - containerPort: {{ postgres_port }}
+          env:
+            - name: POSTGRES_DB
+              value: "{{ postgres_db }}"
+            - name: POSTGRES_USER
+              value: "{{ postgres_user }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ postgres_password }}"
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init.sql
+      volumes:
+        - name: postgres-storage
+{% if postgres_persistence_enabled %}
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+{% else %}
+          emptyDir: {}
+{% endif %}
+        - name: init-sql
+          configMap:
+            name: postgres-initdb-config
+            items:
+              - key: init.sql
+                path: init.sql

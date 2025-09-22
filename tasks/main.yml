@@ -6,6 +6,21 @@
     name: "{{ postgres_namespace }}"
     state: present
 
+- name: Create SeaweedFS S3 credentials secret
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ postgres_namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ backup_secret }}"
+        namespace: "{{ postgres_namespace }}"
+      type: Opaque
+      data:
+        AWS_ACCESS_KEY_ID: "{{ seaweed_access_key | b64encode }}"
+        AWS_SECRET_ACCESS_KEY: "{{ seaweed_secret_key | b64encode }}"
+
 - name: Deploy PostgreSQL headless service
   kubernetes.core.k8s:
     state: present
@@ -23,4 +38,3 @@
     state: present
     namespace: "{{ postgres_namespace }}"
     template: "{{ role_path }}/templates/backup-cronjob.yml.j2"
-

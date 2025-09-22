@@ -6,8 +6,10 @@ postgres_storage_size: "5Gi"
 postgres_user: "admin"
 postgres_password: "changeme"
 postgres_db: "appdb"
-backup_image: "bitnami/kubectl:latest"
-backup_schedule: "0 2 * * *"   # каждый день в 2 ночи
-backup_bucket: "s3://my-postgres-backups"  # заменить на свой бакет
+backup_image: "bitnami/postgresql:16"
+backup_schedule: "0/5 * * * *"   # каждые 5 мин
+backup_bucket: "rdbms"
 backup_secret: "minio-creds"
-
+seaweed_endpoint: "192.168.1.23:8333"
+seaweed_access_key: "immich"
+seaweed_secret_key: "immich_pass"

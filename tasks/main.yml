@@ -1,46 +1,26 @@
-# roles/postgresql/tasks/main.yml
----
-- name: Создание namespace {{ postgres_namespace }} (если ещё не создан)
-  k8s:
-    definition:
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: "{{ postgres_namespace }}"
-  ignore_errors: yes
+# tasks/main.yml
+- name: Ensure namespace exists
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ postgres_namespace }}"
+    state: present
 
-- name: Создание PVC для PostgreSQL
-  k8s:
-    definition:
-      apiVersion: v1
-      kind: PersistentVolumeClaim
-      metadata:
-        name: postgres-pvc
-        namespace: "{{ postgres_namespace }}"
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "{{ postgres_storage_size }}"
-  when: postgres_persistence_enabled
+- name: Deploy PostgreSQL headless service
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ postgres_namespace }}"
+    template: "{{ role_path }}/templates/postgres-service.yml.j2"
 
-- name: Создание ConfigMap с init.sql для включения pgvector
-  k8s:
-    definition:
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: postgres-initdb-config
-        namespace: "{{ postgres_namespace }}"
-      data:
-        init.sql: |
-          CREATE EXTENSION IF NOT EXISTS "vector";
+- name: Deploy PostgreSQL statefulset
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ postgres_namespace }}"
+    template: "{{ role_path }}/templates/postgres-statefulset.yml.j2"
 
-- name: Развертывание PostgreSQL Deployment
-  k8s:
-    definition: "{{ lookup('template', 'postgres-deployment.yml.j2') | from_yaml }}"
+- name: Create backup CronJob
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ postgres_namespace }}"
+    template: "{{ role_path }}/templates/backup-cronjob.yml.j2"
 
-- name: Развертывание PostgreSQL Service
-  k8s:
-    definition: "{{ lookup('template', 'postgres-service.yml.j2') | from_yaml }}"

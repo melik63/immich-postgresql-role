@@ -7,9 +7,11 @@ postgres_user: "admin"
 postgres_password: "changeme"
 postgres_db: "appdb"
 backup_image: "bitnami/postgresql:16"
-backup_schedule: "0/5 * * * *"   # каждые 5 мин
+backup_schedule: "0 */2 * * *"   # каждые 5 мин
 backup_bucket: "rdbms"
 backup_secret: "minio-creds"
 seaweed_endpoint: "192.168.1.23:8333"
 seaweed_access_key: "immich"
 seaweed_secret_key: "immich_pass"
+postgres_service_type: "LoadBalancer"
+
